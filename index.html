@@ -63,16 +63,16 @@
         <h2>说明：点击加载-显示选择-|:随机播放-显示答案:|</h4>
             <!-- <a href="角色曲列表.xlsx" download="角色曲列表.xlsx">下载角色曲列表</a>
             <a href="" id='forDownload' hidden download target="_blank">下载</a> -->
-            <select id="cardfiles" style="width:150px;height:30px;">
+            <!-- <select id="cardfiles" style="width:150px;height:30px;">
                 <option value="幻想星颜萃&全Q版の幻想乡共用卡组">幻想星颜萃&全Q版の幻想乡共用卡组</option>
                 <option value="幻想星颜萃">幻想星颜萃</option>
                 <option value="幻想符式绘">幻想符式绘</option>
                 <option value="恋心浮绘录-觉">恋心浮绘录-觉</option>
                 <option value="恋心浮绘录-恋">恋心浮绘录-恋</option>
-            </select>
-            <button onclick="javascript:downloadCardfile()">下载</button>
-            <button onclick="javascript:loadRemoteCardfile()">加载</button>
-            <br>
+            </select> -->
+            <!-- <button onclick="javascript:downloadCardfile()">下载</button>
+            <button onclick="javascript:loadRemoteCardfile()">加载</button> -->
+            <!-- <br> -->
             <audio controls="controls" src="http://music.163.com/song/media/outer/url?id=22766017" id="player" type="audio/ogg" loop></audio>
             <br>
             <button onclick="javascript:randomSelect()">随机选择</button>
@@ -83,8 +83,9 @@
                 <p id='BGM中文标题'></p>
                 <p id='BGM日文标题'></p>
                 <p id='角色'></p>
+                <p id='corr_pic'></p>
             </div>
-            <div class="mt-sm">
+            <!-- <div class="mt-sm">
                 <input type="file" id="file" style="display:none;" />
                 <input type="file" id="cardfile" style="display:none;" />
                 <button onclick="javascript:selectFile()">加载本地角色曲列表</button>
@@ -93,10 +94,10 @@
                 <button onclick="javascript:chooseBGMs()">显示选择</button>
                 <button onclick="javascript:displayAll()">全部显示</button>
                 <br>
-                <!-- <p style="font-size:20px" white-space="nowrap">输入角色名进行筛选：
+                <p style="font-size:20px" white-space="nowrap">输入角色名进行筛选：
                     <input type="text" name="filter" id="filter" oninput="javascript:filter()"
-                        style="width:200px;height:30px;"></p> -->
-            </div>
+                        style="width:200px;height:30px;"></p>
+            </div> -->
 
             <div id="pic_div">
                 <table id="pic_table">
@@ -119,25 +120,21 @@
                 </table>
             </div>
 
-            <div>
-                <button onclick="javascript:test()">change picture</button>
-            </div>
-
             <div id="result">
                 <table id='BGMtable'></table>
             </div>
     </div>
 
     <script type="text/javascript">
-        function test() {
-            pic1 = document.getElementById("pic1-1");
-            pic1.src = "https://upload.thwiki.cc/thumb/a/a7/%E4%B8%9C%E6%96%B9%E5%A6%96%E5%A6%96%E6%A2%A6%E5%B0%81%E9%9D%A2.jpg/300px-%E4%B8%9C%E6%96%B9%E5%A6%96%E5%A6%96%E6%A2%A6%E5%B0%81%E9%9D%A2.jpg"
-            console.log("test prints");
-        };
 
         function pic_click(pic_id) {
-            
-            console.log(pic_id);
+            console.log(pic_id + "is clicked");
+            var corr_pic_elem = document.getElementById('corr_pic')
+            if (pic_id == 'pic' + corr_pic_elem.innerHTML){
+                console.log('right answer')
+            } else {
+                console.log('wrong!!!')
+            }
         };
         // 自动加载远程excel
         readWorkbookFromRemoteFile('https://reimuyk.github.io/KarutaPrac/zun_list.xlsx', function (workbook) {
@@ -325,13 +322,25 @@
         }
         // 随机播放
         function randomSelect() {
+            // load random audio
             var audio = document.getElementById('player')
-            loadAudio(audio, function () {
+            loadAudioAndPics(audio, function () {
                 var duration = audio.duration
                 audio.currentTime = Math.random() * duration
             })
         }
-        function loadAudio(audio, callback) {
+        function getRandomArrayElements(arr, count) {
+            var shuffled = arr.slice(0), i = arr.length, min = i - count, temp, index;
+            while (i-- > min) {
+                index = Math.floor((i + 1) * Math.random());
+                temp = shuffled[index];
+                shuffled[index] = shuffled[i];
+                shuffled[i] = temp;
+            }
+            return shuffled.slice(min);
+        }
+
+        function loadAudioAndPics(audio, callback) {
             var table = document.getElementById('BGMtable')
             var checkbox = document.getElementsByClassName('checkbox')
             var rows = table.rows
@@ -341,7 +350,10 @@
                     bgms.push(i)
                 }
             }
-            var idx = bgms[Math.floor(Math.random() * bgms.length)]
+            var idxs = getRandomArrayElements(bgms, 12)
+            var idx = idxs[0]
+            idxs = getRandomArrayElements(idxs, 12) // shuffle idxs
+
             rows[idx].style.display = 'none'
 
             var game_no = document.getElementById('作品编号')
@@ -349,23 +361,38 @@
             var bgm_jpn_title = document.getElementById('BGM中文标题')
             var bgm_chn_title = document.getElementById('BGM日文标题')
             var girl_name = document.getElementById('角色')
+            var corr_pic_elem = document.getElementById('corr_pic')
 
             game_no.hidden = true
             game_name.hidden = true
             bgm_jpn_title.hidden = true
             bgm_chn_title.hidden = true
             girl_name.hidden = true
+            corr_pic_elem.hidden = true
 
             game_no.innerHTML = rows[idx].cells[1].innerHTML
             game_name.innerHTML = rows[idx].cells[2].innerHTML
             bgm_jpn_title.innerHTML = rows[idx].cells[3].innerHTML
             bgm_chn_title.innerHTML = rows[idx].cells[4].innerHTML
             girl_name.innerHTML = rows[idx].cells[5].innerHTML
+            for (var i=0; i<12; i++) {
+                if (idxs[i] == idx)
+                    corr_pic_elem.innerHTML = i
+            }
+            
 
             dirname = '[' + rows[idx].cells[1].innerHTML + '] ' + rows[idx].cells[2].innerHTML
             // audio.src = 'mp3\\' + dirname + '\\' + rows[idx].cells[4].innerHTML + '.mp3' // 本地播放
             audio.src = 'http://music.163.com/song/media/outer/url?id=' + rows[idx].cells[6].innerHTML
             audio.load()
+
+            // load 12 random pics
+            for (var i=0; i<12; i++) {
+                var p = document.getElementById('pic'+i.toString())
+                p.src = 'https://reimuyk.github.io/KarutaPrac/img/' + rows[idxs[i]].cells[1].innerHTML + '/' + rows[idxs[i]].cells[7].innerHTML
+                
+            }
+
             audio.onloadedmetadata = callback
         }
         // 显示答案
@@ -375,11 +402,13 @@
             var bgm_jpn_title = document.getElementById('BGM中文标题')
             var bgm_chn_title = document.getElementById('BGM日文标题')
             var girl_name = document.getElementById('角色')
+            var corr_pic_elem = document.getElementById('corr_pic')
             game_no.hidden = false
             game_name.hidden = false
             bgm_jpn_title.hidden = false
             bgm_chn_title.hidden = false
             girl_name.hidden = false
+            corr_pic_elem.hidden = false
         }
         // 随机添加10首
         function addRandom() {
