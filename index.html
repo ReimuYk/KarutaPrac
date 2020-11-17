@@ -59,8 +59,8 @@
 
 <body>
     <div class="container">
-        <h1>东方角色主题曲随机播放器</h1>
-        <h2>说明：点击加载-显示选择-|:随机播放-显示答案:|</h4>
+        <h1>东方鸽牌练习器</h1>
+        <h2>说明：勾选考纲 -|:随机播放-显示答案:|</h4>
             <!-- <a href="角色曲列表.xlsx" download="角色曲列表.xlsx">下载角色曲列表</a>
             <a href="" id='forDownload' hidden download target="_blank">下载</a> -->
             <!-- <select id="cardfiles" style="width:150px;height:30px;">
@@ -357,7 +357,7 @@
             var idx = idxs[0]
             idxs = getRandomArrayElements(idxs, 12) // shuffle idxs
 
-            rows[idx].style.display = 'none'
+            // rows[idx].style.display = 'none'
 
             var game_no = document.getElementById('作品编号')
             var game_name = document.getElementById('作品名称')
@@ -392,6 +392,7 @@
             // load 12 random pics
             for (var i=0; i<12; i++) {
                 var p = document.getElementById('pic'+i.toString())
+                p.src = ''
                 p.src = 'https://reimuyk.github.io/KarutaPrac/img/' + rows[idxs[i]].cells[1].innerHTML + '/' + rows[idxs[i]].cells[7].innerHTML
                 
             }
