@@ -128,12 +128,15 @@
     <script type="text/javascript">
 
         function pic_click(pic_id) {
+            var p_this = document.getElementById(pic_id)
             console.log(pic_id + "is clicked");
             var corr_pic_elem = document.getElementById('corr_pic')
             if (pic_id == 'pic' + corr_pic_elem.innerHTML){
                 console.log('right answer')
+                p_this.src = "https://reimuyk.github.io/KarutaPrac/metadata/correct.png"
             } else {
                 console.log('wrong!!!')
+                p_this.src = "https://reimuyk.github.io/KarutaPrac/metadata/wrong.png"
             }
         };
         // 自动加载远程excel
