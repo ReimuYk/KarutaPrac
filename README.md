@@ -1,4 +1,4 @@
-# （performance）KarutaPrac
+# KarutaPrac
 Touhou Karuta Practice ToolKits
 
 ## Usage
