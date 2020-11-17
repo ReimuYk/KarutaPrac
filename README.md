@@ -3,6 +3,8 @@ Touhou Karuta Practice ToolKits
 
 ## Usage
 
+url: https://reimuyk.github.io/KarutaPrac
+
 勾选考纲（通常全选）
 
 随机播放->选择答案->显示答案
