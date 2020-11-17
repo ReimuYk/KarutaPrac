@@ -52,6 +52,14 @@
         button {
             font-size: 20px;
         }
+
+        .battle_pic {
+            width: 100px;
+        }
+
+        .battle_pic_ai {
+            -webkit-transform:rotate(180deg);
+        }
     </style>
     <script type="text/javascript" src="https://hieda-no-tzz.github.io/TouHou/jquery.min.js"></script>
     <script type="text/javascript" src="https://hieda-no-tzz.github.io/TouHou/xlsx.core.min.js"></script>
@@ -75,6 +83,10 @@
             <!-- <br> -->
             <audio controls="controls" src="http://music.163.com/song/media/outer/url?id=22766017" id="player" type="audio/ogg" loop></audio>
             <br>
+            <form onclick="changeMode()">
+                <input type="radio" name="mode" value="mode1">Warm Up Mode
+                <input type="radio" name="mode" value="mode2">PVE Mode
+            </form>
             <button onclick="javascript:randomSelect()">随机选择</button>
             <button onclick="javascript:answer()">显示答案</button>
             <div id="answer">
@@ -98,8 +110,12 @@
                     <input type="text" name="filter" id="filter" oninput="javascript:filter()"
                         style="width:200px;height:30px;"></p>
             </div> -->
+            <div style="-webkit-transform:rotate(180deg);display: none;">
+                <td><img id="pic0" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+            </div>
+            
 
-            <div id="pic_div">
+            <div id="mode1">
                 <table id="pic_table">
                     <tr>
                         <td><img id="pic0" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
@@ -120,12 +136,95 @@
                 </table>
             </div>
 
+            <div id="mode2" style="display:none;">
+                <table id="battle_table">
+                    <tr>
+                        <p>this is battle mode</p>
+                    </tr>
+                </table>
+            </div>
+
             <div id="result">
                 <table id='BGMtable'></table>
             </div>
     </div>
 
     <script type="text/javascript">
+        /*
+         global variables
+         */
+        var mode_list = ['mode1', 'mode2']
+        var mode = 'mode1'
+
+        /*
+         general functions
+         */
+        function sleep (time) {
+            return new Promise((resolve) => setTimeout(resolve, time));
+        }
+
+        function randomSelect() {
+            // load random audio
+            var audio = document.getElementById('player')
+            loadAudioAndPics(audio, function () {
+                var duration = audio.duration
+                audio.currentTime = Math.random() * duration
+            })
+        }
+
+        /*
+         audio listener
+         */
+        var audio_f = document.getElementById("player")
+        audio_f.addEventListener("play", function () {   //开始播放时触发
+            // $(".reading_audio_play,.reading_audio_bgBox").addClass("play")
+            console.log("event play: " + (new Date()).getTime());
+            sleep(5000).then(() => {
+                audio_f.pause()
+                // 这里写sleep之后需要去做的事情
+            })
+        });
+        audio_f.addEventListener("pause", function () {   // 暂停时会触发，当播放完一首歌曲时也会触发
+            // $(".reading_audio_play,.reading_audio_bgBox").removeClass("play")
+            console.log("event pause: " + (new Date()).getTime());
+        })
+        audio_f.addEventListener("ended",function(){
+            // $(".reading_audio_play,.reading_audio_bgBox").removeClass("play")
+            console.log("pause---ednded")
+            audio_f.pause();
+        },false);
+        
+        /* 
+         Page Logics
+         */
+        function changeMode() {
+            mode = $("[name='mode']").filter(":checked").attr("value"); 
+
+            // switch
+            document.getElementById(mode).style.display = ''
+            for (var i=0; i<mode_list.length; i++) {
+                if (mode_list[i] != mode) {
+                    document.getElementById(mode_list[i]).style.display = 'none'
+                }
+            }
+            console.log("change mode to :" + mode)
+
+            // mode2 filter
+            if (mode == 'mode2') {
+                var table_content = ''
+                var pic_index = 0
+                for (var i=0; i<3; i++) {
+                    table_content += '<tr>'
+                    for (var j=0; j<5; j++) {
+                        table_content += "<td><img id='pic" + pic_index.toString() + "' onclick='pic_click(this.id)' class='battle_pic battle_pic_ai' src='https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png'></td>"
+                        pic_index += 1
+                    }
+                    table_content += '</tr>'
+                }
+                
+                document.getElementById('battle_table').innerHTML = table_content
+            }
+        }
 
         function pic_click(pic_id) {
             var p_this = document.getElementById(pic_id)
@@ -324,14 +423,6 @@
             e.checked = false
         }
         // 随机播放
-        function randomSelect() {
-            // load random audio
-            var audio = document.getElementById('player')
-            loadAudioAndPics(audio, function () {
-                var duration = audio.duration
-                audio.currentTime = Math.random() * duration
-            })
-        }
         function getRandomArrayElements(arr, count) {
             var shuffled = arr.slice(0), i = arr.length, min = i - count, temp, index;
             while (i-- > min) {
