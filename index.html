@@ -61,8 +61,8 @@
     <div class="container">
         <h1>东方角色主题曲随机播放器</h1>
         <h2>说明：点击加载-显示选择-|:随机播放-显示答案:|</h4>
-            <a href="角色曲列表.xlsx" download="角色曲列表.xlsx">下载角色曲列表</a>
-            <a href="" id='forDownload' hidden download target="_blank">下载</a>
+            <!-- <a href="角色曲列表.xlsx" download="角色曲列表.xlsx">下载角色曲列表</a>
+            <a href="" id='forDownload' hidden download target="_blank">下载</a> -->
             <select id="cardfiles" style="width:150px;height:30px;">
                 <option value="幻想星颜萃&全Q版の幻想乡共用卡组">幻想星颜萃&全Q版の幻想乡共用卡组</option>
                 <option value="幻想星颜萃">幻想星颜萃</option>
@@ -101,12 +101,20 @@
             <div id="pic_div">
                 <table id="pic_table">
                     <tr>
-                        <td><img id="pic1-1" onclick="pic_click(this.id)" src="https://upload.thwiki.cc/thumb/b/b2/%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.jpg/300px-%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.jpg"></th>
-                        <td><img src="https://upload.thwiki.cc/thumb/b/b2/%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.jpg/300px-%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.jpg"></th>
+                        <td><img id="pic0" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic1" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic2" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic3" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic4" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic5" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
                     </tr>
                     <tr>
-                        <td><img src="https://upload.thwiki.cc/thumb/b/b2/%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.jpg/300px-%E4%B8%9C%E6%96%B9%E7%BA%A2%E9%AD%94%E4%B9%A1%E5%B0%81%E9%9D%A2.jpg"></td>
-                        <td><img src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic6" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic7" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic8" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic9" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic10" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
+                        <td><img id="pic11" onclick="pic_click(this.id)" src="https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png"></td>
                     </tr>
                 </table>
             </div>
@@ -115,11 +123,9 @@
                 <button onclick="javascript:test()">change picture</button>
             </div>
 
-            <!-- <div id="result">
-                <table id='BGMtable'>
-                    
-                </table>
-            </div> -->
+            <div id="result">
+                <table id='BGMtable'></table>
+            </div>
     </div>
 
     <script type="text/javascript">
@@ -134,7 +140,7 @@
             console.log(pic_id);
         };
         // 自动加载远程excel
-        readWorkbookFromRemoteFile('https://hieda-no-tzz.github.io/TouHou/角色曲列表.xlsx', function (workbook) {
+        readWorkbookFromRemoteFile('https://reimuyk.github.io/KarutaPrac/zun_list.xlsx', function (workbook) {
             readWorkbook(workbook);
         });
         function readWorkbookFromRemoteFile(url, callback) {
