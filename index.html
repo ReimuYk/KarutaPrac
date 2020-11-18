@@ -84,7 +84,7 @@
             <audio controls="controls" src="http://music.163.com/song/media/outer/url?id=22766017" id="player" type="audio/ogg" loop></audio>
             <br>
             <form onclick="changeMode()">
-                <input type="radio" name="mode" value="mode1">Warm Up Mode
+                <input type="radio" name="mode" value="mode1" checked="true">Warm Up Mode
                 <input type="radio" name="mode" value="mode2">PVE Mode
             </form>
             <button onclick="javascript:randomSelect()">随机选择</button>
@@ -137,11 +137,15 @@
             </div>
 
             <div id="mode2" style="display:none;">
-                <table id="battle_table">
-                    <tr>
-                        <p>this is battle mode</p>
-                    </tr>
-                </table>
+                <div id="mode2_table">
+                    <table id="battle_table">
+                        <tr>
+                            <p>this is battle mode</p>
+                        </tr>
+                    </table>
+                </div>
+                <button onclick="dealCards()">发牌</button>
+                <div id="status">游戏方法：选择考纲（全选即可），点一下发牌按钮，此后每个回合按Go按钮开始（乐曲将自动开始），当你选到对面的牌时，最下方会显示my_move状态，点一下自阵的一张牌交给对方，有bug随时私戳残雪</div>
             </div>
 
             <div id="result">
@@ -150,26 +154,65 @@
     </div>
 
     <script type="text/javascript">
+        function test() {
+        }
         /*
-         global variables
+         Global Variables
          */
         var mode_list = ['mode1', 'mode2']
         var mode = 'mode1'
 
+        var player_up_cards = []
+        var player_down_cards = []
+        var mode2_status = 'prepare' // 'prepare' or 'waiting' or 'battle' or 'move' or 'my_move'
+        var bot_latency = 5000 // after ... ms, bot picks a card
+        var correct_picture = ''
+        var wrong_flag = '' // '' or 'down' or 'up' or 'both'
+        var turn = 0
+        
+
         /*
-         general functions
+         General Library
          */
         function sleep (time) {
             return new Promise((resolve) => setTimeout(resolve, time));
         }
 
-        function randomSelect() {
-            // load random audio
-            var audio = document.getElementById('player')
-            loadAudioAndPics(audio, function () {
-                var duration = audio.duration
-                audio.currentTime = Math.random() * duration
-            })
+        function getRandomArrayElements(arr, count) {
+            var shuffled = arr.slice(0), i = arr.length, min = i - count, temp, index;
+            while (i-- > min) {
+                index = Math.floor((i + 1) * Math.random());
+                temp = shuffled[index];
+                shuffled[index] = shuffled[i];
+                shuffled[i] = temp;
+            }
+            return shuffled.slice(min);
+        }
+
+        /*
+         Useful Functions
+         */
+        function changeState(new_state) {
+            console.log("state change:" + mode2_status + "->" + new_state)
+            mode2_status = new_state
+            document.getElementById("status").innerHTML = new_state
+        }
+        
+        function getTableRows() {
+            var table = document.getElementById('BGMtable')
+            return table.rows
+        }
+
+        function getCheckedRows() {
+            var checkbox = document.getElementsByClassName('checkbox')
+            var rows = getTableRows()
+            var bgms = []
+            for (i = 1; i < rows.length; ++i) {
+                if (checkbox[i].checked && rows[i].style.display != 'none') {
+                    bgms.push(i)
+                }
+            }
+            return bgms
         }
 
         /*
@@ -177,15 +220,17 @@
          */
         var audio_f = document.getElementById("player")
         audio_f.addEventListener("play", function () {   //开始播放时触发
-            // $(".reading_audio_play,.reading_audio_bgBox").addClass("play")
-            console.log("event play: " + (new Date()).getTime());
-            sleep(5000).then(() => {
-                audio_f.pause()
-                // 这里写sleep之后需要去做的事情
-            })
+            if (mode=="mode2" && mode2_status=="battle") {
+                var temp_turn = turn
+                sleep(bot_latency).then(() => {
+                    if (temp_turn == turn) botPickCards()
+                })
+            }
         });
+        audio_f.addEventListener("canplay", function () {   // 暂停时会触发，当播放完一首歌曲时也会触发
+            console.log("event canplay: " + (new Date()).getTime());
+        })
         audio_f.addEventListener("pause", function () {   // 暂停时会触发，当播放完一首歌曲时也会触发
-            // $(".reading_audio_play,.reading_audio_bgBox").removeClass("play")
             console.log("event pause: " + (new Date()).getTime());
         })
         audio_f.addEventListener("ended",function(){
@@ -209,23 +254,16 @@
             }
             console.log("change mode to :" + mode)
 
-            // mode2 filter
-            if (mode == 'mode2') {
-                var table_content = ''
-                var pic_index = 0
-                for (var i=0; i<3; i++) {
-                    table_content += '<tr>'
-                    for (var j=0; j<5; j++) {
-                        table_content += "<td><img id='pic" + pic_index.toString() + "' onclick='pic_click(this.id)' class='battle_pic battle_pic_ai' src='https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png'></td>"
-                        pic_index += 1
-                    }
-                    table_content += '</tr>'
-                }
-                
-                document.getElementById('battle_table').innerHTML = table_content
+            // mode2 content
+            if (mode == "mode2") {
+                refreshTablecloth()
             }
+            
         }
 
+        /*
+         Mode 1
+         */
         function pic_click(pic_id) {
             var p_this = document.getElementById(pic_id)
             console.log(pic_id + "is clicked");
@@ -238,6 +276,237 @@
                 p_this.src = "https://reimuyk.github.io/KarutaPrac/metadata/wrong.png"
             }
         };
+
+        /*
+         Mode 2
+         */
+        function buttonGo() {
+            if (mode2_status != 'waiting' && mode2_status != 'prepare') {
+                console.log("buttonGo:" + mode2_status)
+                return
+            }
+
+            changeState('battle')
+
+            loadAudio(audio_f, function () {
+                var duration = audio_f.duration
+                audio_f.currentTime = Math.random() * duration
+                audio_f.play()
+            })
+        }
+        function refreshTablecloth() {
+            if (mode == 'mode2') {
+                var table_content = "<table id='battle_table'>"
+                var pic_index = 0
+                for (var i=0; i<3; i++) {
+                    table_content += '<tr>'
+                    for (var j=0; j<8; j++) {
+                        table_content += "<td><img id='bpic" + pic_index.toString() + "' onclick='battlePick(this.id)' class='battle_pic battle_pic_ai' src='https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png'></td>"
+                        pic_index += 1
+                    }
+                    table_content += '</tr>'
+                }
+                table_content += "<tr>"
+                table_content += "<td/>"
+                table_content += "<td/>"
+                table_content += "<td/>"
+                table_content += "<td><button onclick='buttonGo()'>Go!!!</button></td>"
+                table_content += "<td/>"
+                table_content += "<td/>"
+                table_content += "<td/>"
+                table_content += "<td/>"
+                table_content += "</tr>"
+
+                for (var i=0; i<3; i++) {
+                    table_content += '<tr>'
+                    for (var j=0; j<8; j++) {
+                        table_content += "<td><img id='bpic" + pic_index.toString() + "' onclick='battlePick(this.id)' class='battle_pic' src='https://reimuyk.github.io/KarutaPrac/img/TH06/cirno.png'></td>"
+                        pic_index += 1
+                    }
+                    table_content += '</tr>'
+                }
+                table_content += "</table>"
+                
+                document.getElementById('mode2_table').innerHTML = table_content
+            }
+        }
+
+        function loadAudio(audio, callback) {
+            var table = document.getElementById('BGMtable')
+            var checkbox = document.getElementsByClassName('checkbox')
+            var rows = table.rows
+            var bgms = []
+            for (i = 1; i < rows.length; ++i) {
+                if (checkbox[i].checked && rows[i].style.display != 'none') {
+                    bgms.push(i)
+                }
+            }
+            var idx = getRandomArrayElements(bgms, 1)[0]
+
+            rows[idx].style.display = 'none'
+
+            var game_no = document.getElementById('作品编号')
+            var game_name = document.getElementById('作品名称')
+            var bgm_jpn_title = document.getElementById('BGM中文标题')
+            var bgm_chn_title = document.getElementById('BGM日文标题')
+            var girl_name = document.getElementById('角色')
+            var corr_pic_elem = document.getElementById('corr_pic')
+
+            game_no.hidden = true
+            game_name.hidden = true
+            bgm_jpn_title.hidden = true
+            bgm_chn_title.hidden = true
+            girl_name.hidden = true
+            corr_pic_elem.hidden = true
+
+            game_no.innerHTML = rows[idx].cells[1].innerHTML
+            game_name.innerHTML = rows[idx].cells[2].innerHTML
+            bgm_jpn_title.innerHTML = rows[idx].cells[3].innerHTML
+            bgm_chn_title.innerHTML = rows[idx].cells[4].innerHTML
+            girl_name.innerHTML = rows[idx].cells[5].innerHTML
+            
+
+            dirname = '[' + rows[idx].cells[1].innerHTML + '] ' + rows[idx].cells[2].innerHTML
+            audio.src = 'http://music.163.com/song/media/outer/url?id=' + rows[idx].cells[6].innerHTML
+            audio.load()
+
+            correct_picture = rows[idx].cells[1].innerHTML + '/' + rows[idx].cells[7].innerHTML
+
+            audio.onloadedmetadata = callback
+        }
+
+        function botPickCards() {
+            console.log("botPickCards " + mode2_status)
+            for (var i=0; i<48; i++) {
+                var p = document.getElementById('bpic'+i.toString())
+                // console.log(p.src)
+                // console.log("ref:"+"https://reimuyk.github.io/KarutaPrac/img/" + correct_picture)
+                if (p.src == "https://reimuyk.github.io/KarutaPrac/img/" + correct_picture && mode2_status == 'battle') {
+                    mode2_status = 'move'
+                    console.log("correct: " + i)
+                    p.src = "https://reimuyk.github.io/KarutaPrac/metadata/wrong.png"
+                    sleep(1000).then(() => {
+                        p.src = 'about:blank'
+                        console.log("botpic sleep " + i)
+                        if (i >= 24) {
+                            // move a card downwards
+                            console.log("i >= 24")
+                            for (var j=0; j<24; j++) {
+                                var pm = document.getElementById('bpic'+j.toString())
+                                if (pm.src != 'about:blank') {
+                                    console.log("pmsrc = "+pm.src)
+                                    var temp_src = pm.src
+                                    pm.src = 'about:blank'
+                                    for (var k=24; k<48; k++) {
+                                        var pe = document.getElementById('bpic'+k.toString())
+                                        console.log("pesrc = " + pe.src)
+                                        if (pe.src == 'about:blank') {
+                                            console.log(pe.src)
+                                            console.log(temp_src)
+                                            pe.src = temp_src
+                                            break
+                                        }
+                                    }
+                                    break
+                                }
+                            }
+                        }
+                        changeState('waiting')
+                        turn += 1
+                    })
+                    return
+                }
+            }
+            changeState('waiting')
+            console.log("bot_pick: not exists")
+        }
+
+        function battlePick(pic_id) {
+            var p_i = eval(pic_id.slice(4)) // (int)
+            var p = document.getElementById(pic_id)
+            console.log("battlePick: p_i=" + p_i)
+            console.log("battlePick: pic_id=" + pic_id)
+
+            if (mode2_status == 'my_move') {
+                // choice a card to move forward
+                if (p_i >=  24 && p.src != 'about:blank') {
+                    changeState('waiting')
+                    turn += 1
+                    var temp_src = p.src
+                    p.src = 'about:blank'
+                    for (var i=0; i<24; i++) {
+                        var pu = document.getElementById('bpic' + i.toString())
+                        if (pu.src == 'about:blank') {
+                            pu.src = temp_src
+                            break
+                        }
+                    }
+                }
+                return
+            }
+            
+            if (mode2_status == 'battle') {
+                if (p.src == "https://reimuyk.github.io/KarutaPrac/img/" + correct_picture) {
+                    changeState('move')
+                    p.src = "https://reimuyk.github.io/KarutaPrac/metadata/correct.png"
+                    sleep(1000).then(() => {
+                        p.src = 'about:blank'
+                        
+                        if (p_i < 24) {
+                            // notice click a picture to move
+                            changeState('my_move')
+                        } else {
+                            changeState('waiting')
+                            turn += 1
+                        }
+                    })
+                } else {
+                    // no punish mode
+
+                    // var temp_src = p.src
+                    // p.src = "https://reimuyk.github.io/KarutaPrac/metadata/wrong.png"
+                }
+            }
+                
+        }
+
+        function assignCards() {
+            for (var i=0; i<player_up_cards.length; i++) {
+                var p = document.getElementById("bpic" + i.toString())
+                p.src = "https://reimuyk.github.io/KarutaPrac/img/" + player_up_cards[i]
+            }
+
+            for (var i=0; i<player_down_cards.length; i++) {
+                var p = document.getElementById("bpic" + (i + 24).toString())
+                p.src = "https://reimuyk.github.io/KarutaPrac/img/" + player_down_cards[i]
+            }
+        }
+
+        function dealCards() {
+            var rows = getTableRows()
+            var bgms = getCheckedRows()
+            
+            var cards = new Set()
+            for (var i=0; i<bgms.length; i++) {
+                var file_path = rows[bgms[i]].cells[1].innerHTML + '/' + rows[bgms[i]].cells[7].innerHTML
+                cards.add(file_path)
+            }
+            cards = Array.from(cards) // non-dup array
+            cards = getRandomArrayElements(cards, 48)
+            player_up_cards = cards.slice(0,24)
+            player_down_cards = cards.slice(24,48)
+            
+            console.log("up:" + player_up_cards.length)
+            console.log("dow:" + player_down_cards.length)
+            console.log(cards)
+
+            assignCards()
+        }
+
+        /*
+         Load Data Logic
+         */
+        
         // 自动加载远程excel
         readWorkbookFromRemoteFile('https://reimuyk.github.io/KarutaPrac/zun_list.xlsx', function (workbook) {
             readWorkbook(workbook);
@@ -423,15 +692,14 @@
             e.checked = false
         }
         // 随机播放
-        function getRandomArrayElements(arr, count) {
-            var shuffled = arr.slice(0), i = arr.length, min = i - count, temp, index;
-            while (i-- > min) {
-                index = Math.floor((i + 1) * Math.random());
-                temp = shuffled[index];
-                shuffled[index] = shuffled[i];
-                shuffled[i] = temp;
-            }
-            return shuffled.slice(min);
+        function randomSelect() {
+            // load random audio
+            var audio = document.getElementById('player')
+            loadAudioAndPics(audio, function () {
+                var duration = audio.duration
+                audio.currentTime = Math.random() * duration
+                console.log("event durationchanged: " + (new Date()).getTime());
+            })
         }
 
         function loadAudioAndPics(audio, callback) {
@@ -483,7 +751,7 @@
             // load 12 random pics
             for (var i=0; i<12; i++) {
                 var p = document.getElementById('pic'+i.toString())
-                p.src = ''
+                p.src = 'about:blank'
                 p.src = 'https://reimuyk.github.io/KarutaPrac/img/' + rows[idxs[i]].cells[1].innerHTML + '/' + rows[idxs[i]].cells[7].innerHTML
                 
             }
@@ -506,44 +774,44 @@
             corr_pic_elem.hidden = false
         }
         // 随机添加10首
-        function addRandom() {
-            var checkboxs = document.getElementsByClassName('checkbox');
-            var rows = document.getElementById('BGMtable').rows
-            var order = Array.from(Array(rows.length - 1), (v, k) => k + 1);
-            order = shuffle(order)
-            count = 0
-            for (i = 0; i < order.length; ++i) {
-                if (!checkboxs[order[i]].checked) {
-                    checkboxs[order[i]].checked = true
-                    count++
-                    if (count >= 10) {
-                        break
-                    }
-                }
-            }
-        }
-        // 下载远程卡牌列表
-        function downloadCardfile() {
-            var selected = document.getElementById('cardfiles')
-            var a = document.getElementById('forDownload')
-            a.href = 'https://hieda-no-tzz.github.io/TouHou/' + selected.value + '.txt'
-            a.title = selected.value + '.txt'
-            a.click()
-        }
+        // function addRandom() {
+        //     var checkboxs = document.getElementsByClassName('checkbox');
+        //     var rows = document.getElementById('BGMtable').rows
+        //     var order = Array.from(Array(rows.length - 1), (v, k) => k + 1);
+        //     order = shuffle(order)
+        //     count = 0
+        //     for (i = 0; i < order.length; ++i) {
+        //         if (!checkboxs[order[i]].checked) {
+        //             checkboxs[order[i]].checked = true
+        //             count++
+        //             if (count >= 10) {
+        //                 break
+        //             }
+        //         }
+        //     }
+        // }
+        // // 下载远程卡牌列表
+        // function downloadCardfile() {
+        //     var selected = document.getElementById('cardfiles')
+        //     var a = document.getElementById('forDownload')
+        //     a.href = 'https://hieda-no-tzz.github.io/TouHou/' + selected.value + '.txt'
+        //     a.title = selected.value + '.txt'
+        //     a.click()
+        // }
         // 加载远程卡牌列表
-        function loadRemoteCardfile() {
-            var selected = document.getElementById('cardfiles')
-            var url = 'https://hieda-no-tzz.github.io/TouHou/' + selected.value + '.txt'
-            var xhr = new XMLHttpRequest();
-            xhr.open('get', url, true);
-            xhr.onload = function (e) {
-                if (xhr.status == 200) {
-                    var cards = xhr.responseText.split('\n')
-                    loadCards(cards)
-                }
-            };
-            xhr.send();
-        }
+        // function loadRemoteCardfile() {
+        //     var selected = document.getElementById('cardfiles')
+        //     var url = 'https://hieda-no-tzz.github.io/TouHou/' + selected.value + '.txt'
+        //     var xhr = new XMLHttpRequest();
+        //     xhr.open('get', url, true);
+        //     xhr.onload = function (e) {
+        //         if (xhr.status == 200) {
+        //             var cards = xhr.responseText.split('\n')
+        //             loadCards(cards)
+        //         }
+        //     };
+        //     xhr.send();
+        // }
         // 鼠标移动到按钮上选中复选框
         function check(idx) {
             var checkboxs = document.getElementsByClassName('checkbox');
