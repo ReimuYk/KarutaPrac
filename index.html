@@ -151,6 +151,11 @@
             <div id="result">
                 <table id='BGMtable'></table>
             </div>
+
+            <div id="preload" style="display:none;">
+                <img src="https://reimuyk.github.io/KarutaPrac/metadata/correct.png">
+                <img src="https://reimuyk.github.io/KarutaPrac/metadata/wrong.png">
+            </div>
     </div>
 
     <script type="text/javascript">
@@ -286,6 +291,7 @@
                 return
             }
 
+            turn += 1
             changeState('battle')
 
             loadAudio(audio_f, function () {
@@ -376,7 +382,7 @@
         }
 
         function botPickCards() {
-            console.log("botPickCards " + mode2_status)
+            console.log("botPickCards " + mode2_status + turn)
             for (var i=0; i<48; i++) {
                 var p = document.getElementById('bpic'+i.toString())
                 // console.log(p.src)
@@ -412,7 +418,6 @@
                             }
                         }
                         changeState('waiting')
-                        turn += 1
                     })
                     return
                 }
@@ -431,7 +436,6 @@
                 // choice a card to move forward
                 if (p_i >=  24 && p.src != 'about:blank') {
                     changeState('waiting')
-                    turn += 1
                     var temp_src = p.src
                     p.src = 'about:blank'
                     for (var i=0; i<24; i++) {
@@ -457,7 +461,6 @@
                             changeState('my_move')
                         } else {
                             changeState('waiting')
-                            turn += 1
                         }
                     })
                 } else {
