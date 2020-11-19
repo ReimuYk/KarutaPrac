@@ -418,11 +418,13 @@
                             }
                         }
                         changeState('waiting')
+                        turn += 1
                     })
                     return
                 }
             }
             changeState('waiting')
+            turn += 1
             console.log("bot_pick: not exists")
         }
 
@@ -451,6 +453,7 @@
             
             if (mode2_status == 'battle') {
                 if (p.src == "https://reimuyk.github.io/KarutaPrac/img/" + correct_picture) {
+                    turn += 1
                     changeState('move')
                     p.src = "https://reimuyk.github.io/KarutaPrac/metadata/correct.png"
                     sleep(1000).then(() => {
