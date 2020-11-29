@@ -67,7 +67,7 @@
 
 <body>
     <div class="container">
-        <h1>东方鸽牌练习器v1.0.4</h1>
+        <h1>东方鸽牌练习器v1.1.0</h1>
         <h2>说明：勾选考纲 -|:随机播放-显示答案:|</h4>
             <!-- <a href="角色曲列表.xlsx" download="角色曲列表.xlsx">下载角色曲列表</a>
             <a href="" id='forDownload' hidden download target="_blank">下载</a> -->
@@ -137,6 +137,14 @@
             </div>
 
             <div id="mode2" style="display:none;">
+                <form onclick="changeDiff()">
+                    <input type="radio" name="diff" value="Beginner">Beginner(10s)
+                    <input type="radio" name="diff" value="Easy" checked="true">Easy(5s)
+                    <input type="radio" name="diff" value="Normal">Normal(3s)
+                    <input type="radio" name="diff" value="Hard">Hard(2s)
+                    <input type="radio" name="diff" value="Lunatic">Lunatic(1s)
+                    <input type="radio" name="diff" value="Impossible">Impossible(0.5s)
+                </form>
                 <div id="mode2_table">
                     <table id="battle_table">
                         <tr>
@@ -146,6 +154,11 @@
                 </div>
                 <button onclick="dealCards()">发牌</button>
                 <div id="status">游戏方法：选择考纲（全选即可），点一下发牌按钮，此后每个回合按Go按钮开始（乐曲将自动开始），当你选到对面的牌时，最下方会显示my_move状态，点一下自阵的一张牌交给对方，有bug随时私戳残雪</div>
+                <table id="battle_table">
+                    <tr>
+                        <p>this is battle mode</p>
+                    </tr>
+                </table>
             </div>
 
             <div id="result">
@@ -263,7 +276,6 @@
             if (mode == "mode2") {
                 refreshTablecloth()
             }
-            
         }
 
         /*
@@ -285,6 +297,24 @@
         /*
          Mode 2
          */
+         function changeDiff() {
+            var diff = $("[name='diff']").filter(":checked").attr("value"); 
+
+            // set latency
+            if (diff == "Beginner") 
+                bot_latency = 10000
+            else if(diff == "Easy")
+                bot_latency = 5000
+            else if (diff == "Normal")
+                bot_latency = 3000
+            else if (diff == "Hard")
+                bot_latency = 2000
+            else if (diff == "Lunatic")
+                bot_latency = 1000
+            else if (diff == "Impossible")
+                bot_latency = 500
+        }
+
         function buttonGo() {
             if (mode2_status != 'waiting' && mode2_status != 'prepare') {
                 console.log("buttonGo:" + mode2_status)
